@@ -17,25 +17,40 @@
 
 package com.huaweicloud.samples;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class ProviderController {
-  @Autowired
-  private Configuration configuration;
+public class GovernanceController {
+  private Map<String, Integer> retryTimes = new HashMap<>();
 
-  // a very simple service to echo the request parameter
-  @GetMapping("/sayHello")
-  public String sayHello(@RequestParam("name") String name) {
-    return "Hello " + name;
+  @RequestMapping("/retry")
+  public String retry(HttpServletResponse response, @RequestParam(name = "invocationID") String invocationID) {
+    retryTimes.putIfAbsent(invocationID, 0);
+    retryTimes.put(invocationID, retryTimes.get(invocationID) + 1);
+
+    int retry = retryTimes.get(invocationID);
+
+    if (retry  == 3) {
+      return "try times: " + retry;
+    }
+    response.setStatus(502);
+    return null;
   }
 
-  @RequestMapping("/configuration")
-  public String getName() {
-    return "Now configuration name is: {}" + configuration.getName();
+  @RequestMapping("/hello")
+  public String sayHello() {
+    return "Hello world!";
+  }
+
+  @RequestMapping("/circuitBreaker")
+  public String circuitBreaker() {
+    throw new RuntimeException("circuitBreaker by provider.");
   }
 }

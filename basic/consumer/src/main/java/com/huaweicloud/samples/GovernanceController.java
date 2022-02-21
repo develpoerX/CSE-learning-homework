@@ -18,24 +18,40 @@
 package com.huaweicloud.samples;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 @RestController
-public class ProviderController {
+@RequestMapping(path = "govern")
+public class GovernanceController {
   @Autowired
-  private Configuration configuration;
+  private RestTemplate restTemplate;
 
-  // a very simple service to echo the request parameter
-  @GetMapping("/sayHello")
-  public String sayHello(@RequestParam("name") String name) {
-    return "Hello " + name;
+  private int count = 0;
+
+  @RequestMapping("/hello")
+  public String hello() {
+    return restTemplate.getForObject("http://provider/hello", String.class);
   }
 
-  @RequestMapping("/configuration")
-  public String getName() {
-    return "Now configuration name is: {}" + configuration.getName();
+  @RequestMapping("/retry")
+  public String retry(@RequestParam(name = "invocationID") String invocationID) {
+    return restTemplate.getForObject("http://provider/retry?invocationID={1}", String.class, invocationID);
+  }
+
+  @RequestMapping("/circuitBreaker")
+  public String circuitBreaker() throws Exception {
+    count++;
+    if (count % 3 == 0) {
+      return "ok";
+    }
+    throw new RuntimeException("test error");
+  }
+
+  @RequestMapping("/bulkhead")
+  public String bulkhead() {
+    return restTemplate.getForObject("http://provider/hello", String.class);
   }
 }
